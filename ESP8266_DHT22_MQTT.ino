@@ -2,22 +2,24 @@
 //  - Adafruit Unified Sensor (required for DHT)
 //  - DHT Sensor Library
 //  - PubSubClient (for MQTT)
-
+#include <FS.h>                   //this needs to be first, or it all crashes and burns...
 #include <DHT.h>
 #include <ESP8266WiFi.h>
-#include <WiFiUdp.h>
+#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
 #include <PubSubClient.h>
 
-#define MQTT_HOST "*"
-#define MQTT_PORT 1883
-#define MQTT_USER "*"
-#define MQTT_PASS "*"
-#define MQTT_CLIENT "ESP8266_living_dht22"
-#define MQTT_TOPIC_H1 "living/temp" 
-#define MQTT_TOPIC_T1 "living/hum"
+//#define SENSORLOCATION "bedroom"
+#define SENSORLOCATION "bath"
 
-#define WIFI_SSID "*"
-#define WIFI_PASS "*"
+#define MQTT_HOST "192.168.xxx.xxx"
+#define MQTT_PORT 1883
+#define MQTT_CLIENT "ESP8266_dht22_" SENSORLOCATION
+#define MQTT_TOPIC_H1 SENSORLOCATION "/hum" 
+#define MQTT_TOPIC_T1 SENSORLOCATION "/temp"
+
+#define WIFI_SSID SENSORLOCATION "_Sensor"
+#define WIFI_PASS "admin"
+#define RESET_PIN 14 //D5 on nodeMCU
 
 WiFiClient espClient;
 PubSubClient client(espClient); 
@@ -27,20 +29,14 @@ PubSubClient client(espClient);
 DHT dht22(D3, DHT22); //DHT22 wired to D3
 
 void setup() {
-  
+  WiFiManager wifiManager;
   Serial.begin(115200);
-  Serial.print("Connecting to ");
-  Serial.println(WIFI_SSID);
-
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-  WiFi.mode(WIFI_STA); 
-
-  while ( WiFi.status() != WL_CONNECTED ) {
-    delay ( 500 );
-    Serial.print ( "." );
-  }
 
 
+  setupResetHandling(wifiManager, RESET_PIN);
+ 
+  connectToWifi(wifiManager);
+  
   client.setServer(MQTT_HOST, MQTT_PORT); 
   
   dht22.begin();
@@ -69,7 +65,7 @@ void mqttConnect() {
 
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    if (client.connect(MQTT_CLIENT, MQTT_USER, MQTT_PASS)) {
+    if (client.connect(MQTT_CLIENT)) {
       Serial.println("connected");
     } else {
       Serial.print("failed, rc=");

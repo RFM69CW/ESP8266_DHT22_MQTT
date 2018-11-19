@@ -8,14 +8,15 @@
 #include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
 #include <PubSubClient.h>
 
-//#define SENSORLOCATION "bedroom"
-#define SENSORLOCATION "bath"
+#define SENSORLOCATION "bedroom"
+//#define SENSORLOCATION "bath"
 
 #define MQTT_HOST "192.168.xxx.xxx"
 #define MQTT_PORT 1883
 #define MQTT_CLIENT "ESP8266_dht22_" SENSORLOCATION
 #define MQTT_TOPIC_H1 SENSORLOCATION "/hum" 
 #define MQTT_TOPIC_T1 SENSORLOCATION "/temp"
+#define MQTT_TOPIC_ACTIVE SENSORLOCATION "/sensor/active"
 
 #define WIFI_SSID SENSORLOCATION "_Sensor"
 #define WIFI_PASS "admin"
@@ -44,21 +45,13 @@ void setup() {
 
 void loop() {
 
-  delay(REPORT_DELAY_SECS * 1000);
-
   if (!client.connected()) {
     mqttConnect();
   }
   client.loop(); 
   readAndPublishDHT22();
   
-}
-
-void log(char * msg, float value) {
-  if (value != NULL) {
-    Serial.print(value);
-  }
-  Serial.println();
+  delay(REPORT_DELAY_SECS * 1000);
 }
 
 void mqttConnect() {
@@ -81,14 +74,20 @@ void readAndPublishDHT22() {
   float t1 = dht22.readTemperature();
   if (isnan(h1) || isnan(t1)) {
     Serial.println("Failed to read from DHT22 sensor!");
+    sendActiveState(false);
     return;
   }
-  log("DHT22 Humidity:    ", h1);
-  log("DHT22 Temperature: ", t1);
+  Serial.println("DHT22 Humidity:    " + String(h1));
+  Serial.println("DHT22 Temperature: " + String(t1));
 
   client.publish(MQTT_TOPIC_H1, String(h1).c_str(), true);
   client.publish(MQTT_TOPIC_T1, String(t1).c_str(), true); 
+  sendActiveState(true);
 
-  log("------------------------", NULL);
+  Serial.println("------------------------");
+}
+
+void sendActiveState(boolean isActive) {
+  client.publish(MQTT_TOPIC_ACTIVE, String(isActive).c_str(), true); 
 }
 

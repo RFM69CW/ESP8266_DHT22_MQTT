@@ -24,7 +24,8 @@ Example configuration:
         "url": "http://xxx.xxx.xxx.xxx:1883",
         "logMqtt": true,
         "topics": {
-            "getCurrentRelativeHumidity": "bath/hum"
+            "getCurrentRelativeHumidity": "bath/hum",
+            "getStatusActive": "bath/sensor/active"
         },
         "integerValue": true
     },
@@ -35,7 +36,8 @@ Example configuration:
         "url": "http://xxx.xxx.xxx.xxx:1883",
         "logMqtt": true,
         "topics": {
-            "getCurrentTemperature": "bath/temp"
+            "getCurrentTemperature": "bath/temp",
+            "getStatusActive": "bath/sensor/active"
         },
         "integerValue": true
     }
